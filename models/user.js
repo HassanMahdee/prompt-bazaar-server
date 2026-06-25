@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
+    _id: { type: String }, // Explicitly tell Mongoose that Better-Auth handles IDs as strings
     name: {
       type: String,
       required: true,
