@@ -1,8 +1,8 @@
 // config/auth.js
-import { betterAuth } from "better-auth";
-import { mongodbAdapter } from "better-auth/adapters/mongodb";
-import { MongoClient } from "mongodb";
-import dotenv from "dotenv";
+const { betterAuth } = require("better-auth");
+const { mongodbAdapter } = require("better-auth/adapters/mongodb");
+const { MongoClient } = require("mongodb");
+const dotenv = require("dotenv");
 
 // Load environment variables from .env file
 dotenv.config();
@@ -11,7 +11,7 @@ dotenv.config();
 const client = new MongoClient(process.env.MONGODB_URI);
 const db = client.db();
 
-export const auth = betterAuth({
+const auth = betterAuth({
   // 1. Connect Better Auth to MongoDB
   database: mongodbAdapter(db, {
     client: client, // Providing the client automatically enables secure database transactions
@@ -47,3 +47,7 @@ export const auth = betterAuth({
     joins: true,
   },
 });
+
+module.exports = {
+  auth,
+};

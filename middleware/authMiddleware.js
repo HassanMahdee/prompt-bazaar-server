@@ -1,11 +1,11 @@
 // middleware/authMiddleware.js
-import { auth } from "../config/auth.js"; // Importing your initialized Better Auth instance
+const { auth } = require("../config/auth"); // Importing your initialized Better Auth instance
 
 /**
  * Core Middleware: Verifies the Better Auth Session Token
  * Extracts token from Authorization header or Cookies
  */
-export const verifyToken = async (req, res, next) => {
+const verifyToken = async (req, res, next) => {
   try {
     // 1. Extract token from Authorization header or Fallback to cookies
     let token = null;
@@ -54,7 +54,7 @@ export const verifyToken = async (req, res, next) => {
 /**
  * Role Check: Verifies if the authenticated user is a Creator or Admin
  */
-export const verifyCreator = (req, res, next) => {
+const verifyCreator = (req, res, next) => {
   // Ensure user object exists from verifyToken middleware
   if (!req.user) {
     return res
@@ -76,7 +76,7 @@ export const verifyCreator = (req, res, next) => {
 /**
  * Role Check: Verifies if the authenticated user is an Admin
  */
-export const verifyAdmin = (req, res, next) => {
+const verifyAdmin = (req, res, next) => {
   if (!req.user) {
     return res
       .status(401)
@@ -91,4 +91,10 @@ export const verifyAdmin = (req, res, next) => {
   }
 
   return next();
+};
+
+module.exports = {
+  verifyToken,
+  verifyCreator,
+  verifyAdmin,
 };

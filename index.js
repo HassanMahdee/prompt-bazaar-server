@@ -1,15 +1,18 @@
 // index.js
-import express from "express";
-import cors from "cors";
-import cookieParser from "cookie-parser"; // Needed to read session cookies easily
-import { auth } from "./config/auth.js";
-import { toNodeHandler } from "better-auth/node";
-import {
+const dns = require("node:dns");
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
+const express = require("express");
+const cors = require("cors");
+const cookieParser = require("cookie-parser"); // Needed to read session cookies easily
+const { auth } = require("./config/auth");
+const { toNodeHandler } = require("better-auth/node");
+const {
   verifyToken,
   verifyCreator,
   verifyAdmin,
-} from "./middleware/authMiddleware.js";
+} = require("./middleware/authMiddleware");
 const promptRoutes = require("./routes/promptRoutes");
+const connectDB = require("./config/db");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,7 +28,7 @@ app.use(
   }),
 );
 app.use(express.json());
-app.use(cookie_parser());
+app.use(cookieParser());
 
 // Structural Sanity Check Vector
 app.use("/", (req, res) => {
@@ -39,7 +42,7 @@ app.use("/", (req, res) => {
  * 1. Mount Better Auth Handlers
  * This catches all requests hitting /api/auth/* and redirects them to Better Auth engine
  */
-app.all("/api/auth/*", toNodeHandler(auth));
+app.all("/api/auth/*path", toNodeHandler(auth));
 
 // 2. Sample Public Route
 app.get("/", (req, res) => {
