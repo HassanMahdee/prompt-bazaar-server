@@ -1,24 +1,27 @@
 {
   "name": "prompt-bazaar-server",
   "version": "1.0.0",
-  "description": "",
+  "description": "Backend API for AI Prompt Sharing & Marketplace",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@better-auth/mongo-adapter": "^1.6.20",
-    "better-auth": "^1.6.20",
-    "cookie-parser": "^1.4.7",
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "mongodb": "^7.3.0",
-    "mongoose": "^9.7.2",
-    "nodemon": "^3.1.14"
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.21.0",
+    "multer": "^1.4.5-lts.1",
+    "stripe": "^14.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
   }
 }

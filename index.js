@@ -1,75 +1,154 @@
-// index.js
 const dns = require("node:dns");
 dns.setServers(["8.8.8.8", "8.8.4.4"]);
+
 const express = require("express");
+
+// Import CORS middleware
 const cors = require("cors");
-const cookieParser = require("cookie-parser"); // Needed to read session cookies easily
-const { auth } = require("./config/auth");
-const { toNodeHandler } = require("better-auth/node");
-const {
-  verifyToken,
-  verifyCreator,
-  verifyAdmin,
-} = require("./middleware/authMiddleware");
-const promptRoutes = require("./routes/promptRoutes");
-const connectDB = require("./config/db");
 
+// Import MongoDB client
+const client = require("./db/mongodb");
+
+// Import all route modules
+const promptsRoutes = require("./routes/prompts.routes");
+const usersRoutes = require("./routes/users.routes");
+const bookmarksRoutes = require("./routes/bookmarks.routes");
+const reportsRoutes = require("./routes/reports.routes");
+const paymentsRoutes = require("./routes/payments.routes");
+const analyticsRoutes = require("./routes/analytics.routes");
+
+// Load environment variables from .env file
+require("dotenv").config();
+
+// Create an Express application
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB Cluster
-connectDB();
+// Get the port from environment variables or use 5000 as default
+const port = process.env.PORT || 5000;
 
-// Standard Boilerplate Middleware
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
-    credentials: true, // Crucial for cookie-based session verification if used
-  }),
-);
+/**
+ * Middleware Configuration
+ * Middleware functions are executed before the route handlers
+ */
+
+// Enable CORS (Cross-Origin Resource Sharing)
+// This allows frontend applications to communicate with this backend
+app.use(cors());
+
+// Parse incoming JSON request bodies
+// This makes req.body available in route handlers
 app.use(express.json());
-app.use(cookieParser());
 
-// Structural Sanity Check Vector
-app.use("/", (req, res) => {
-  res.json({
-    status: "online",
-    message: "Welcome to Prompt Bazaar Backend API Core",
+/**
+ * Middleware to attach database instance to request
+ * This allows controllers to access the database via req.db
+ */
+app.use(async (req, res, next) => {
+  try {
+    // Check if client is connected
+    if (!client.topology || !client.topology.isConnected()) {
+      await client.connect();
+    }
+
+    // Attach database instance to request
+    req.db = client.db("prompt-bazaar");
+
+    // Proceed to next middleware/route
+    next();
+  } catch (error) {
+    console.error("Database connection error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Database connection error",
+    });
+  }
+});
+
+/**
+ * Route Configuration
+ * Mount all route modules at their respective paths
+ */
+app.use("/prompts", promptsRoutes);
+app.use("/user", usersRoutes);
+app.use("/bookmarks", bookmarksRoutes);
+app.use("/reports", reportsRoutes);
+app.use("/payments", paymentsRoutes);
+app.use("/analytics", analyticsRoutes);
+
+/**
+ * Root Route
+ * A simple health check endpoint
+ */
+app.get("/", (req, res) => {
+  res.send("Prompt Bazaar server is running now");
+});
+
+/**
+ * 404 Handler
+ * This middleware handles requests to routes that don't exist
+ */
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
   });
 });
 
 /**
- * 1. Mount Better Auth Handlers
- * This catches all requests hitting /api/auth/* and redirects them to Better Auth engine
+ * Error Handler
+ * This middleware catches any errors that occur in the application
  */
-app.all("/api/auth/*path", toNodeHandler(auth));
+app.use((err, req, res, next) => {
+  console.error("Error:", err);
 
-// 2. Sample Public Route
-app.get("/", (req, res) => {
-  res.json({ success: true, message: "Welcome to Prompt Bazaar API!" });
-});
-
-// 3. Protected Dashboard Route (Any authenticated user)
-app.get("/api/dashboard", verifyToken, (req, res) => {
-  res.json({
-    success: true,
-    message: `Hello ${req.user.name}, welcome to your Obsidian Dashboard.`,
+  res.status(500).json({
+    success: false,
+    message: "Internal server error",
+    error: err.message,
   });
 });
 
-// 4. Creator Studio Route (Creators & Admins only)
-app.post("/api/prompts/create", verifyToken, verifyCreator, (req, res) => {
-  res.json({ success: true, message: "Prompt creation field initialized." });
+/**
+ * Start the Server
+ * This function connects to MongoDB and starts listening for requests
+ */
+async function run() {
+  try {
+    // Connect to MongoDB
+    await client.connect();
+    console.log("Connected to MongoDB successfully");
+
+    // Start the Express server
+    app.listen(port, () => {
+      console.log(`Prompt Bazaar server is running on port: ${port}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+}
+
+/**
+ * Graceful Shutdown
+ * Handle server shutdown events (Ctrl+C, etc.)
+ */
+process.on("SIGINT", async () => {
+  console.log("\nShutting down server...");
+
+  try {
+    // Close the MongoDB connection
+    await client.close();
+
+    console.log("MongoDB connection closed");
+    console.log("Server shut down gracefully");
+
+    // Exit the process
+    process.exit(0);
+  } catch (error) {
+    console.error("Error during shutdown:", error);
+    process.exit(1);
+  }
 });
 
-// 5. Admin Panel Route (Strictly Admins only)
-app.get("/api/admin/analytics", verifyToken, verifyAdmin, (req, res) => {
-  res.json({ success: true, message: "System-wide data analysis loaded." });
-});
-
-// Mount Modular Enterprise API Route Groups
-app.use("/api/prompts", promptRoutes);
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Start the server
+run().catch(console.dir);
