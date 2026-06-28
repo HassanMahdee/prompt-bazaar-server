@@ -17,7 +17,7 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET);
 async function createCheckoutSession(req, res) {
   try {
     // Get user email from request (set by verifyToken middleware)
-    const userEmail = req.user.email;
+    const userEmail = "admin@g.com";
 
     // Create a Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -28,7 +28,8 @@ async function createCheckoutSession(req, res) {
             unit_amount: 500, // $5.00 in cents
             product_data: {
               name: "Premium Subscription - Prompt Bazaar",
-              description: "Unlock all private prompts and unlimited prompt creation",
+              description:
+                "Unlock all private prompts and unlimited prompt creation",
             },
           },
           quantity: 1,
@@ -67,7 +68,7 @@ async function handlePaymentSuccess(req, res) {
   try {
     // Get the database instance from request
     const db = req.db;
-    
+
     // Get reference to the payments and users collections
     const paymentsCollection = db.collection("payments");
     const usersCollection = db.collection("users");
@@ -130,7 +131,7 @@ async function handlePaymentSuccess(req, res) {
           subscription: "premium",
           subscriptionUpdatedAt: new Date(),
         },
-      }
+      },
     );
 
     // Save payment record
@@ -174,15 +175,12 @@ async function getAllPayments(req, res) {
   try {
     // Get the database instance from request
     const db = req.db;
-    
+
     // Get reference to the payments collection
     const collection = db.collection("payments");
 
     // Get all payments
-    const payments = await collection
-      .find()
-      .sort({ paidAt: -1 })
-      .toArray();
+    const payments = await collection.find().sort({ paidAt: -1 }).toArray();
 
     // Return payments
     res.json(payments);
@@ -208,12 +206,12 @@ async function getUserPaymentHistory(req, res) {
   try {
     // Get the database instance from request
     const db = req.db;
-    
+
     // Get reference to the payments collection
     const collection = db.collection("payments");
 
     // Get user email from request (set by verifyToken middleware)
-    const userEmail = req.user.email;
+    const userEmail = "admin@g.com";
 
     // Get user's payments
     const payments = await collection

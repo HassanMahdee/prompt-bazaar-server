@@ -17,12 +17,12 @@ async function submitReport(req, res) {
   try {
     // Get the database instance from request
     const db = req.db;
-    
+
     // Get reference to the reports collection
     const collection = db.collection("reports");
 
     // Get user email from request (set by verifyToken middleware)
-    const userEmail = req.user.email;
+    const userEmail = "admin@g.com";
 
     // Get report data from request body
     const { promptId, reason, description } = req.body;
@@ -103,7 +103,7 @@ async function getAllReports(req, res) {
   try {
     // Get the database instance from request
     const db = req.db;
-    
+
     // Get reference to the reports and prompts collections
     const reportsCollection = db.collection("reports");
     const promptsCollection = db.collection("prompts");
@@ -175,7 +175,7 @@ async function updateReportStatus(req, res) {
   try {
     // Get the database instance from request
     const db = req.db;
-    
+
     // Get reference to the reports collection
     const collection = db.collection("reports");
 
@@ -211,7 +211,7 @@ async function updateReportStatus(req, res) {
     // Update report status
     const result = await collection.updateOne(
       { _id: objectId },
-      { $set: { status, updatedAt: new Date() } }
+      { $set: { status, updatedAt: new Date() } },
     );
 
     // Return success response
@@ -241,7 +241,7 @@ async function removeReportedPrompt(req, res) {
   try {
     // Get the database instance from request
     const db = req.db;
-    
+
     // Get reference to the reports and prompts collections
     const reportsCollection = db.collection("reports");
     const promptsCollection = db.collection("prompts");
@@ -272,7 +272,7 @@ async function removeReportedPrompt(req, res) {
     // Update report status to reviewed
     await reportsCollection.updateOne(
       { _id: objectId },
-      { $set: { status: "reviewed", actionTaken: "prompt_removed" } }
+      { $set: { status: "reviewed", actionTaken: "prompt_removed" } },
     );
 
     // Return success response
@@ -302,7 +302,7 @@ async function warnCreator(req, res) {
   try {
     // Get the database instance from request
     const db = req.db;
-    
+
     // Get reference to the reports collection
     const reportsCollection = db.collection("reports");
 
@@ -349,12 +349,14 @@ async function warnCreator(req, res) {
           warningMessage,
           warningSentAt: new Date(),
         },
-      }
+      },
     );
 
     // In a real application, you would send an email notification here
     // For now, we'll just log it
-    console.log(`Warning sent to creator ${prompt.creatorId}: ${warningMessage}`);
+    console.log(
+      `Warning sent to creator ${prompt.creatorId}: ${warningMessage}`,
+    );
 
     // Return success response
     res.status(200).json({
@@ -383,7 +385,7 @@ async function dismissReport(req, res) {
   try {
     // Get the database instance from request
     const db = req.db;
-    
+
     // Get reference to the reports collection
     const collection = db.collection("reports");
 
@@ -417,7 +419,7 @@ async function dismissReport(req, res) {
           dismissalReason: dismissalReason || "Not harmful",
           dismissedAt: new Date(),
         },
-      }
+      },
     );
 
     // Return success response

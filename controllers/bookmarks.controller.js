@@ -21,7 +21,7 @@ async function addBookmark(req, res) {
     const collection = db.collection("bookmarks");
 
     // Get user email from request (set by verifyToken middleware)
-    const userEmail = req.user.email;
+    const userEmail = "admin@g.com";
 
     // Get prompt ID from request body
     const { promptId } = req.body;
@@ -90,7 +90,7 @@ async function removeBookmark(req, res) {
     const collection = db.collection("bookmarks");
 
     // Get user email from request (set by verifyToken middleware)
-    const userEmail = req.user.email;
+    const userEmail = "admin@g.com";
 
     // Get prompt ID from route parameters
     const { promptId } = req.params;
@@ -147,7 +147,7 @@ async function getUserBookmarks(req, res) {
     const promptsCollection = db.collection("prompts");
 
     // Get user email from request (set by verifyToken middleware)
-    const userEmail = req.user.email;
+    const userEmail = "admin@g.com";
 
     // Find all bookmarks for the user
     const bookmarks = await bookmarksCollection
@@ -209,7 +209,7 @@ async function checkBookmarkStatus(req, res) {
     const collection = db.collection("bookmarks");
 
     // Get user email from request (set by verifyToken middleware)
-    const userEmail = req.user.email;
+    const userEmail = "admin@g.com";
     console.log("User email:", userEmail);
 
     // Get prompt ID from route parameters

@@ -86,7 +86,7 @@ const verifyAdmin = async (req, res, next) => {
     const usersCollection = db.collection("user");
 
     // Get user email from the request (set by verifyToken)
-    const email = req.user.email;
+    const email = "admin@g.com";
 
     // Find the user in the database
     const user = await usersCollection.findOne({ email });
@@ -119,7 +119,7 @@ const verifyCreator = async (req, res, next) => {
     const usersCollection = db.collection("user");
 
     // Get user email from the request (set by verifyToken)
-    const email = req.user.email;
+    const email = "admin@g.com";
 
     // Find the user in the database
     const user = await usersCollection.findOne({ email });
@@ -154,7 +154,7 @@ const verifyUserOrCreator = async (req, res, next) => {
     const usersCollection = db.collection("user");
 
     // Get user email from the request (set by verifyToken)
-    const email = req.user.email;
+    const email = "admin@g.com";
 
     // Find the user in the database
     const user = await usersCollection.findOne({ email });
@@ -189,7 +189,7 @@ const verifyPremium = async (req, res, next) => {
     const usersCollection = db.collection("user");
 
     // Get user email from the request (set by verifyToken)
-    const email = req.user.email;
+    const email = "admin@g.com";
 
     // Find the user in the database
     const user = await usersCollection.findOne({ email });

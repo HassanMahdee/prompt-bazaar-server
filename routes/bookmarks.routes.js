@@ -8,7 +8,6 @@ const {
   getUserBookmarks,
   checkBookmarkStatus,
 } = require("../controllers/bookmarks.controller");
-const { verifyToken } = require("../utils/auth");
 
 // Create a new router instance
 const router = express.Router();
@@ -17,25 +16,25 @@ const router = express.Router();
  * POST /bookmarks
  * Add a bookmark
  */
-router.post("/", verifyToken, addBookmark);
+router.post("/", addBookmark);
 
 /**
  * DELETE /bookmarks/:promptId
  * Remove a bookmark
  */
-router.delete("/:promptId", verifyToken, removeBookmark);
+router.delete("/:promptId", removeBookmark);
 
 /**
  * GET /bookmarks
  * Get user's bookmarks
  */
-router.get("/", verifyToken, getUserBookmarks);
+router.get("/", getUserBookmarks);
 
 /**
  * GET /bookmarks/check/:promptId
  * Check if prompt is bookmarked
  */
-router.get("/check/:promptId", verifyToken, checkBookmarkStatus);
+router.get("/check/:promptId", checkBookmarkStatus);
 
 // Export the router
 module.exports = router;

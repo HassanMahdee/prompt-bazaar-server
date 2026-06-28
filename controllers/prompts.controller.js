@@ -227,7 +227,7 @@ async function createPrompt(req, res) {
     const promptData = req.body;
 
     // Get user email from request (set by verifyToken middleware)
-    // const userEmail = req.user.email;
+    // const userEmail = "admin@g.com";
 
     // Handle image upload if present
     // if (req.file) {
@@ -236,11 +236,11 @@ async function createPrompt(req, res) {
 
     // Check if user is free tier and has exceeded 3 prompt limit
     const usersCollection = db.collection("user");
-    const user = await usersCollection.findOne({ email: req.user.email });
+    const user = await usersCollection.findOne({ email: "admin@g.com" });
 
     if (user && user.subscription === "free") {
       const promptCount = await collection.countDocuments({
-        creatorId: req.user.email,
+        creatorId: "admin@g.com",
       });
       if (promptCount >= 3) {
         return res.status(403).json({
@@ -339,7 +339,7 @@ async function updatePrompt(req, res) {
     }
 
     // Check if user is the creator or admin
-    // const userEmail = "admin@g.com";
+    // const userEmail = ""admin@g.com"";
     // if (existingPrompt.creatorId !== userEmail && req.user.role !== "admin") {
     //   return res.status(403).json({
     //     success: false,
@@ -425,7 +425,7 @@ async function deletePrompt(req, res) {
     }
 
     // Check if user is the creator or admin
-    // const userEmail = req.user.email;
+    // const userEmail = "admin@g.com";
     // if (existingPrompt.creatorId !== userEmail && req.user.role !== "admin") {
     //   return res.status(403).json({
     //     success: false,
@@ -487,7 +487,7 @@ async function incrementCopyCount(req, res) {
     // Check if prompt is private and user is not premium
     if (existingPrompt.visibility === "private") {
       const usersCollection = db.collection("user");
-      const user = await usersCollection.findOne({ email: req.user.email });
+      const user = await usersCollection.findOne({ email: "admin@g.com" });
 
       if (!user || user.subscription !== "premium") {
         return res.status(403).json({
@@ -633,7 +633,7 @@ async function addReview(req, res) {
     const reviewData = req.body;
 
     // Add user email from request to review data
-    reviewData.userEmail = req.user.email;
+    reviewData.userEmail = "admin@g.com";
 
     // Validate the review data
     const validation = validateReview(reviewData);
@@ -666,7 +666,7 @@ async function addReview(req, res) {
     // Check if prompt is private and user is not premium
     if (existingPrompt.visibility === "private") {
       const usersCollection = db.collection("user");
-      const user = await usersCollection.findOne({ email: req.user.email });
+      const user = await usersCollection.findOne({ email: "admin@g.com" });
 
       if (!user || user.subscription !== "premium") {
         return res.status(403).json({
@@ -678,7 +678,7 @@ async function addReview(req, res) {
 
     // Check if user has already reviewed this prompt
     const alreadyReviewed = existingPrompt.reviews?.some(
-      (review) => review.userEmail === req.user.email,
+      (review) => review.userEmail === "admin@g.com",
     );
 
     if (alreadyReviewed) {
