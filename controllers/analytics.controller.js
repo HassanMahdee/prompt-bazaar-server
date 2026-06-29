@@ -16,9 +16,9 @@ async function getAdminSummary(req, res) {
   try {
     // Get the database instance from request
     const db = req.db;
-    
+
     // Get reference to all collections
-    const usersCollection = db.collection("users");
+    const usersCollection = db.collection("user");
     const promptsCollection = db.collection("prompts");
     const reviewsCollection = db.collection("prompts"); // Reviews are embedded in prompts
     const bookmarksCollection = db.collection("bookmarks");
@@ -50,7 +50,7 @@ async function getAdminSummary(req, res) {
     const prompts = await promptsCollection.find().toArray();
     const totalReviews = prompts.reduce(
       (sum, prompt) => sum + (prompt.reviews?.length || 0),
-      0
+      0,
     );
 
     // Count total bookmarks
@@ -66,7 +66,7 @@ async function getAdminSummary(req, res) {
     const payments = await paymentsCollection.find().toArray();
     const totalRevenue = payments.reduce(
       (sum, payment) => sum + (payment.amount || 0),
-      0
+      0,
     );
 
     // Count total copies
@@ -75,7 +75,7 @@ async function getAdminSummary(req, res) {
       .toArray();
     const totalCopies = promptsWithCopies.reduce(
       (sum, prompt) => sum + (prompt.copyCount || 0),
-      0
+      0,
     );
 
     // Return summary statistics
@@ -114,7 +114,7 @@ async function getCreatorSummary(req, res) {
   try {
     // Get the database instance from request
     const db = req.db;
-    
+
     // Get reference to collections
     const promptsCollection = db.collection("prompts");
     const bookmarksCollection = db.collection("bookmarks");
@@ -124,7 +124,7 @@ async function getCreatorSummary(req, res) {
 
     // Count total prompts by creator
     const totalPrompts = await promptsCollection.countDocuments({
-      creatorId: email,
+      userEmail: email,
     });
 
     // Count approved prompts by creator
@@ -140,18 +140,20 @@ async function getCreatorSummary(req, res) {
     });
 
     // Get all prompts by creator to calculate totals
-    const prompts = await promptsCollection.find({ creatorId: email }).toArray();
+    const prompts = await promptsCollection
+      .find({ creatorId: email })
+      .toArray();
 
     // Calculate total copies
     const totalCopies = prompts.reduce(
       (sum, prompt) => sum + (prompt.copyCount || 0),
-      0
+      0,
     );
 
     // Calculate total reviews
     const totalReviews = prompts.reduce(
       (sum, prompt) => sum + (prompt.reviews?.length || 0),
-      0
+      0,
     );
 
     // Get prompt IDs
@@ -193,45 +195,48 @@ async function getUserSummary(req, res) {
   try {
     // Get the database instance from request
     const db = req.db;
-    
+
     // Get reference to collections
     const promptsCollection = db.collection("prompts");
     const bookmarksCollection = db.collection("bookmarks");
-    const reportsCollection = db.collection("reports");
 
     // Get user email from route parameters
     const { email } = req.params;
-
-    // Count total prompts by user
-    const totalPrompts = await promptsCollection.countDocuments({
-      creatorId: email,
-    });
+    console.log("email", email);
 
     // Count total bookmarks by user
     const totalBookmarks = await bookmarksCollection.countDocuments({
       userEmail: email,
     });
 
-    // Count total reports by user
-    const totalReports = await reportsCollection.countDocuments({
-      userEmail: email,
-    });
+    const reviews = await promptsCollection
+      .aggregate([
+        { $unwind: "$reviews" },
 
-    // Get all prompts by user to calculate reviews
-    const prompts = await promptsCollection.find({ creatorId: email }).toArray();
+        { $match: { "reviews.userEmail": email } },
 
-    // Calculate total reviews received
-    const totalReviewsReceived = prompts.reduce(
-      (sum, prompt) => sum + (prompt.reviews?.length || 0),
-      0
-    );
+        {
+          $project: {
+            _id: 0,
+            promptId: "$_id",
+            promptTitle: "$title",
+            promptCategory: "$category",
+            review: "$reviews",
+          },
+        },
+
+        { $sort: { "review.createdAt": -1 } },
+      ])
+      .toArray();
 
     // Return user summary
-    res.json({
-      totalPrompts,
-      totalBookmarks,
-      totalReports,
-      totalReviewsReceived,
+    res.status(200).json({
+      success: true,
+      data: {
+        totalBookmarks,
+        reviews,
+        totalReviews: reviews.length,
+      },
     });
   } catch (error) {
     // Log the error for debugging
@@ -255,7 +260,7 @@ async function getPromptGrowth(req, res) {
   try {
     // Get the database instance from request
     const db = req.db;
-    
+
     // Get reference to prompts collection
     const collection = db.collection("prompts");
 
@@ -316,7 +321,7 @@ async function getTopCreators(req, res) {
   try {
     // Get the database instance from request
     const db = req.db;
-    
+
     // Get reference to prompts collection
     const collection = db.collection("prompts");
 
@@ -364,7 +369,7 @@ async function getFeaturedPrompts(req, res) {
   try {
     // Get the database instance from request
     const db = req.db;
-    
+
     // Get reference to prompts collection
     const collection = db.collection("prompts");
 

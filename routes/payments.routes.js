@@ -8,6 +8,7 @@ const {
   getAllPayments,
   getUserPaymentHistory,
 } = require("../controllers/payments.controller");
+const { verifyToken, verifyAdmin, verifyCreator } = require("../utils/auth");
 
 // Create a new router instance
 const router = express.Router();
@@ -16,19 +17,19 @@ const router = express.Router();
  * POST /payment-checkout-session
  * Create Stripe checkout session
  */
-router.post("/payment-checkout-session", createCheckoutSession);
+// router.post("/payment-checkout-session", createCheckoutSession);
 
 /**
  * POST /payment-success
  * Handle payment success
  */
-router.post("/payment-success", handlePaymentSuccess);
+router.post("/payment-success", verifyToken, handlePaymentSuccess);
 
 /**
  * GET /payments
  * Get all payments
  */
-router.get("/", getAllPayments);
+router.get("/", verifyToken, verifyAdmin, getAllPayments);
 
 /**
  * GET /payments/history

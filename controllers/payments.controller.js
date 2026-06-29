@@ -1,5 +1,5 @@
 // Import Stripe for payment processing
-const stripe = require("stripe")(process.env.STRIPE_SECRET);
+const stripe = require("../lib/stripe");
 
 /**
  * Payments Controller
@@ -14,50 +14,6 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET);
  * This function handles POST /payment-checkout-session
  * Creates a Stripe checkout session for premium subscription
  */
-async function createCheckoutSession(req, res) {
-  try {
-    // Get user email from request (set by verifyToken middleware)
-    const userEmail = "admin@g.com";
-
-    // Create a Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            unit_amount: 500, // $5.00 in cents
-            product_data: {
-              name: "Premium Subscription - Prompt Bazaar",
-              description:
-                "Unlock all private prompts and unlimited prompt creation",
-            },
-          },
-          quantity: 1,
-        },
-      ],
-      customer_email: userEmail,
-      mode: "payment",
-      metadata: {
-        userEmail: userEmail,
-      },
-      success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancel`,
-    });
-
-    // Return the checkout session URL
-    res.json({ url: session.url });
-  } catch (error) {
-    // Log the error for debugging
-    console.error("Error creating checkout session:", error);
-
-    // Return error response
-    res.status(500).json({
-      success: false,
-      message: "Error creating checkout session",
-      error: error.message,
-    });
-  }
-}
 
 /**
  * Handle payment success
@@ -71,10 +27,10 @@ async function handlePaymentSuccess(req, res) {
 
     // Get reference to the payments and users collections
     const paymentsCollection = db.collection("payments");
-    const usersCollection = db.collection("users");
+    const usersCollection = db.collection("user");
 
     // Get session ID from query parameters
-    const sessionId = req.query.session_id;
+    const sessionId = req.query.sessionid;
 
     if (!sessionId) {
       return res.status(400).json({
@@ -102,16 +58,9 @@ async function handlePaymentSuccess(req, res) {
       });
     }
 
-    // Check if payment was successful
-    if (session.payment_status !== "paid") {
-      return res.status(400).json({
-        success: false,
-        message: "Payment not successful",
-      });
-    }
-
     // Get user email from session metadata
-    const userEmail = session.metadata.userEmail;
+    const userEmail = session.customer_email;
+    console.log("User email from session metadata:", userEmail);
 
     // Find the user
     const user = await usersCollection.findOne({ email: userEmail });
@@ -144,7 +93,10 @@ async function handlePaymentSuccess(req, res) {
       paidAt: new Date(),
     };
 
+    console.log("Saving payment record:", payment);
+
     const paymentResult = await paymentsCollection.insertOne(payment);
+    console.log("Payment record saved:", paymentResult);
 
     // Return success response
     res.json({
@@ -211,7 +163,7 @@ async function getUserPaymentHistory(req, res) {
     const collection = db.collection("payments");
 
     // Get user email from request (set by verifyToken middleware)
-    const userEmail = "admin@g.com";
+    const userEmail = req.user.email;
 
     // Get user's payments
     const payments = await collection
@@ -236,7 +188,6 @@ async function getUserPaymentHistory(req, res) {
 
 // Export all controller functions
 module.exports = {
-  createCheckoutSession,
   handlePaymentSuccess,
   getAllPayments,
   getUserPaymentHistory,

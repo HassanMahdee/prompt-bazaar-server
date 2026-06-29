@@ -10,6 +10,7 @@ const {
   getTopCreators,
   getFeaturedPrompts,
 } = require("../controllers/analytics.controller");
+const { verifyToken, verifyAdmin, verifyCreator } = require("../utils/auth");
 
 // Create a new router instance
 const router = express.Router();
@@ -18,19 +19,24 @@ const router = express.Router();
  * GET /analytics/admin-summary
  * Get admin summary statistics
  */
-router.get("/admin-summary", getAdminSummary);
+router.get("/admin-summary", verifyToken, verifyAdmin, getAdminSummary);
 
 /**
  * GET /analytics/creator-summary/:email
  * Get creator summary statistics
  */
-router.get("/creator-summary/:email", getCreatorSummary);
+router.get(
+  "/creator-summary/:email",
+  verifyToken,
+  verifyCreator,
+  getCreatorSummary,
+);
 
 /**
  * GET /analytics/user-summary/:email
  * Get user summary statistics
  */
-router.get("/user-summary/:email", getUserSummary);
+router.get("/user-summary/:email", verifyToken, getUserSummary);
 
 /**
  * GET /analytics/prompt-growth

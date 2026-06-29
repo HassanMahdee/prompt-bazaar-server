@@ -84,9 +84,14 @@ function validateReview(reviewData) {
 
   // Check each required field
   requiredFields.forEach((field) => {
-    // Check if the field is missing or empty
-    if (!reviewData[field] || reviewData[field].trim() === "") {
-      // Add an error message for the missing field
+    const value = reviewData[field];
+
+    const isEmpty =
+      typeof value === "string"
+        ? !value || value.trim() === ""
+        : value === undefined || value === null;
+
+    if (isEmpty) {
       errors.push(`${field} is required`);
     }
   });

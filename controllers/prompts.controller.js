@@ -9,6 +9,57 @@ const upload = require("../middleware/upload");
  * This function handles GET /api/prompts
  * It supports query parameters for filtering and sorting
  */
+
+async function getAllPromptsAdmin(req, res) {
+  try {
+    // Get the database instance from request
+    const db = req.db;
+
+    // Get reference to the prompts collection
+    const collection = db.collection("prompts");
+
+    // Get query parameters from the request
+    const { page = 1, limit = 10 } = req.query;
+
+    // Build the sort object
+    // Default sort is by createdAt in descending order (newest first)
+    let sortOption = { createdAt: -1 };
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Execute the query with filter, sort, and pagination
+    const prompts = await collection
+      .find({})
+      .sort(sortOption)
+      .skip(skip)
+      .limit(parseInt(limit))
+      .toArray();
+
+    // Get total count for pagination info
+    const total = await collection.countDocuments();
+
+    // Return the prompts with 200 status
+    res.status(200).json({
+      success: true,
+      count: prompts.length,
+      total,
+      page: parseInt(page),
+      totalPages: Math.ceil(total / parseInt(limit)),
+      data: prompts,
+    });
+  } catch (error) {
+    // Log the error for debugging
+    console.error("Error getting all prompts:", error);
+
+    // Return error response with 500 status
+    res.status(500).json({
+      success: false,
+      message: "Error retrieving prompts",
+      error: error.message,
+    });
+  }
+}
 async function getAllPrompts(req, res) {
   try {
     // Get the database instance from request
@@ -227,7 +278,7 @@ async function createPrompt(req, res) {
     const promptData = req.body;
 
     // Get user email from request (set by verifyToken middleware)
-    // const userEmail = "admin@g.com";
+    const { userEmail } = req.body;
 
     // Handle image upload if present
     // if (req.file) {
@@ -235,45 +286,26 @@ async function createPrompt(req, res) {
     // }
 
     // Check if user is free tier and has exceeded 3 prompt limit
-    const usersCollection = db.collection("user");
-    const user = await usersCollection.findOne({ email: "admin@g.com" });
+    // const usersCollection = db.collection("user");
+    // const user = await usersCollection.findOne({ email: userEmail });
 
-    if (user && user.subscription === "free") {
-      const promptCount = await collection.countDocuments({
-        creatorId: "admin@g.com",
-      });
-      if (promptCount >= 3) {
-        return res.status(403).json({
-          success: false,
-          message:
-            "Free users can only create up to 3 prompts. Upgrade to premium for unlimited prompts.",
-        });
-      }
-    }
-
-    // Validate the prompt data
-    const validation = validatePrompt(promptData);
-
-    // Check if validation failed
-    if (!validation.isValid) {
-      // Return 400 with validation errors
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: validation.errors,
-      });
-    }
+    // if (user) {
+    //   const promptCount = await collection.countDocuments({
+    //     creatorId: userEmail,
+    //   });
+    //   if (promptCount >= 3 && user.subscription === "free") {
+    //     return res.status(403).json({
+    //       success: false,
+    //       message:
+    //         "Free users can only create up to 3 prompts. Upgrade to premium for unlimited prompts.",
+    //     });
+    //   }
+    // }
 
     // Automatically set default values
     promptData.copyCount = 0;
     promptData.status = "pending";
     promptData.createdAt = new Date();
-    promptData.updatedAt = new Date();
-
-    // If tags is not provided, set it to empty array
-    if (!promptData.tags) {
-      promptData.tags = [];
-    }
 
     // If reviews is not provided, set it to empty array
     if (!promptData.reviews) {
@@ -282,15 +314,13 @@ async function createPrompt(req, res) {
 
     // Insert the new prompt into the collection
     const result = await collection.insertOne(promptData);
-
-    // Get the inserted prompt by its ID
-    const insertedPrompt = await collection.findOne({ _id: result.insertedId });
+    console.log("Prompt created with ID:", result.insertedId);
 
     // Return the created prompt with 201 status
     res.status(201).json({
       success: true,
       message: "Prompt created successfully",
-      data: insertedPrompt,
+      data: result,
     });
   } catch (error) {
     // Log the error for debugging
@@ -338,14 +368,6 @@ async function updatePrompt(req, res) {
       });
     }
 
-    // Check if user is the creator or admin
-    // const userEmail = ""admin@g.com"";
-    // if (existingPrompt.creatorId !== userEmail && req.user.role !== "admin") {
-    //   return res.status(403).json({
-    //     success: false,
-    //     message: "You can only update your own prompts",
-    //   });
-    // }
 
     // Fields that should not be updated directly
     const restrictedFields = [
@@ -424,14 +446,6 @@ async function deletePrompt(req, res) {
       });
     }
 
-    // Check if user is the creator or admin
-    // const userEmail = "admin@g.com";
-    // if (existingPrompt.creatorId !== userEmail && req.user.role !== "admin") {
-    //   return res.status(403).json({
-    //     success: false,
-    //     message: "You can only delete your own prompts",
-    //   });
-    // }
 
     // Delete the prompt from the collection
     const result = await collection.deleteOne({ _id: objectId });
@@ -487,7 +501,7 @@ async function incrementCopyCount(req, res) {
     // Check if prompt is private and user is not premium
     if (existingPrompt.visibility === "private") {
       const usersCollection = db.collection("user");
-      const user = await usersCollection.findOne({ email: "admin@g.com" });
+      const user = await usersCollection.findOne({ subscription: "premium" });
 
       if (!user || user.subscription !== "premium") {
         return res.status(403).json({
@@ -543,23 +557,6 @@ async function updatePromptStatus(req, res) {
     // Get the new status and rejection feedback from the request body
     const { status, rejectionFeedback } = req.body;
 
-    // Validate that status is provided
-    if (!status) {
-      return res.status(400).json({
-        success: false,
-        message: "Status is required",
-      });
-    }
-
-    // Validate that status is one of the allowed values
-    const allowedStatuses = ["pending", "approved", "rejected"];
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status. Must be pending, approved, or rejected",
-      });
-    }
-
     // Convert the string ID to MongoDB ObjectId
     const { ObjectId } = require("mongodb");
     const objectId = new ObjectId(id);
@@ -592,14 +589,11 @@ async function updatePromptStatus(req, res) {
       { $set: updateData },
     );
 
-    // Get the updated prompt
-    const updatedPrompt = await collection.findOne({ _id: objectId });
-
     // Return the updated prompt with 200 status
     res.status(200).json({
       success: true,
       message: "Status updated successfully",
-      data: updatedPrompt,
+      data: result,
     });
   } catch (error) {
     // Log the error for debugging
@@ -628,57 +622,23 @@ async function addReview(req, res) {
 
     // Get the prompt ID from the route parameter
     const { id } = req.params;
-
+    console.log("id", id);
     // Get the review data from the request body
     const reviewData = req.body;
-
-    // Add user email from request to review data
-    reviewData.userEmail = "admin@g.com";
-
-    // Validate the review data
-    const validation = validateReview(reviewData);
-
-    // Check if validation failed
-    if (!validation.isValid) {
-      // Return 400 with validation errors
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: validation.errors,
-      });
-    }
 
     // Convert the string ID to MongoDB ObjectId
     const { ObjectId } = require("mongodb");
     const objectId = new ObjectId(id);
+    console.log("objectId", objectId);
 
     // Check if prompt exists
     const existingPrompt = await collection.findOne({ _id: objectId });
 
-    if (!existingPrompt) {
-      // Return 404 if prompt not found
-      return res.status(404).json({
-        success: false,
-        message: "Prompt not found",
-      });
-    }
-
     // Check if prompt is private and user is not premium
-    if (existingPrompt.visibility === "private") {
-      const usersCollection = db.collection("user");
-      const user = await usersCollection.findOne({ email: "admin@g.com" });
-
-      if (!user || user.subscription !== "premium") {
-        return res.status(403).json({
-          success: false,
-          message: "Premium subscription required to review private prompts",
-        });
-      }
-    }
 
     // Check if user has already reviewed this prompt
     const alreadyReviewed = existingPrompt.reviews?.some(
-      (review) => review.userEmail === "admin@g.com",
+      (review) => review.userEmail === reviewData.userEmail,
     );
 
     if (alreadyReviewed) {
@@ -696,10 +656,8 @@ async function addReview(req, res) {
       { _id: objectId },
       {
         $push: { reviews: reviewData },
-        $set: { updatedAt: new Date() },
       },
     );
-
     // Get the updated prompt
     const updatedPrompt = await collection.findOne({ _id: objectId });
 
@@ -735,11 +693,11 @@ async function getPromptsByCreator(req, res) {
     const collection = db.collection("prompts");
 
     // Get the creator ID from the route parameter
-    const { creatorId } = req.params;
+    const { email } = req.params;
 
     // Find all prompts with the given creatorId
     // Convert cursor to array using toArray()
-    const prompts = await collection.find({ creatorId }).toArray();
+    const prompts = await collection.find({ userEmail: email }).toArray();
 
     // Return the prompts with 200 status
     res.status(200).json({
@@ -786,28 +744,17 @@ async function featurePrompt(req, res) {
     // Check if prompt exists
     const existingPrompt = await collection.findOne({ _id: objectId });
 
-    if (!existingPrompt) {
-      // Return 404 if prompt not found
-      return res.status(404).json({
-        success: false,
-        message: "Prompt not found",
-      });
-    }
-
     // Update the featured status
     const result = await collection.updateOne(
       { _id: objectId },
       { $set: { featured, updatedAt: new Date() } },
     );
 
-    // Get the updated prompt
-    const updatedPrompt = await collection.findOne({ _id: objectId });
-
     // Return the updated prompt with 200 status
     res.status(200).json({
       success: true,
       message: "Prompt featured status updated successfully",
-      data: updatedPrompt,
+      data: result,
     });
   } catch (error) {
     // Log the error for debugging
@@ -824,6 +771,7 @@ async function featurePrompt(req, res) {
 
 // Export all controller functions so they can be used in routes
 module.exports = {
+  getAllPromptsAdmin,
   getAllPrompts,
   getPromptById,
   createPrompt,

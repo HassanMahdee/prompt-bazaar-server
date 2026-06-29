@@ -1,6 +1,6 @@
 // Load environment variables
 require("dotenv").config();
-
+const { ObjectId } = require("mongodb");
 /**
  * Verify BetterAuth Session Token Middleware
  * This middleware verifies the JWT token from the Authorization header
@@ -12,7 +12,6 @@ require("dotenv").config();
 const verifyToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    console.log("Auth header:", authHeader);
 
     if (!authHeader) {
       return res
@@ -29,11 +28,9 @@ const verifyToken = async (req, res, next) => {
 
     const db = req.db;
 
-    // ✅ BetterAuth session token MongoDB তে "session" collection এ থাকে
     const session = await db
       .collection("session")
       .findOne({ token: tokenString });
-    console.log("Session:", session);
 
     if (!session) {
       return res
@@ -41,14 +38,12 @@ const verifyToken = async (req, res, next) => {
         .json({ message: "Unauthorized - Invalid session" });
     }
 
-    // ✅ Session expired কিনা check করো
     if (new Date(session.expiresAt) < new Date()) {
       return res
         .status(401)
         .json({ message: "Unauthorized - Session expired" });
     }
 
-    // ✅ Session থেকে userId নিয়ে user খোঁজো
     const user = await db
       .collection("user")
       .findOne({ _id: new ObjectId(session.userId) });
@@ -57,7 +52,6 @@ const verifyToken = async (req, res, next) => {
       return res.status(401).json({ message: "Unauthorized - User not found" });
     }
 
-    // ✅ req.user এ বসাও
     req.user = {
       email: user.email,
       userId: user.id,
@@ -86,7 +80,7 @@ const verifyAdmin = async (req, res, next) => {
     const usersCollection = db.collection("user");
 
     // Get user email from the request (set by verifyToken)
-    const email = "admin@g.com";
+    const email = req.user.email;
 
     // Find the user in the database
     const user = await usersCollection.findOne({ email });
@@ -119,7 +113,7 @@ const verifyCreator = async (req, res, next) => {
     const usersCollection = db.collection("user");
 
     // Get user email from the request (set by verifyToken)
-    const email = "admin@g.com";
+    const email = req.user.email;
 
     // Find the user in the database
     const user = await usersCollection.findOne({ email });
@@ -154,7 +148,7 @@ const verifyUserOrCreator = async (req, res, next) => {
     const usersCollection = db.collection("user");
 
     // Get user email from the request (set by verifyToken)
-    const email = "admin@g.com";
+    const email = req.user.email;
 
     // Find the user in the database
     const user = await usersCollection.findOne({ email });
@@ -189,7 +183,7 @@ const verifyPremium = async (req, res, next) => {
     const usersCollection = db.collection("user");
 
     // Get user email from the request (set by verifyToken)
-    const email = "admin@g.com";
+    const email = req.user.email;
 
     // Find the user in the database
     const user = await usersCollection.findOne({ email });

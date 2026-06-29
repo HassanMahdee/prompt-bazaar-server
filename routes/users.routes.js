@@ -11,6 +11,7 @@ const {
   getUserProfile,
   updateUserSubscription,
 } = require("../controllers/users.controller");
+const { verifyToken, verifyAdmin, verifyCreator } = require("../utils/auth");
 
 // Create a new router instance
 const router = express.Router();
@@ -19,19 +20,19 @@ const router = express.Router();
  * POST /users
  * Create or update a user
  */
-router.post("/", createOrUpdateUser);
+router.post("/", verifyToken, verifyAdmin, createOrUpdateUser);
 
 /**
  * GET /users
  * Get all users
  */
-router.get("/", getAllUsers);
+router.get("/", verifyToken, verifyAdmin, getAllUsers);
 
 /**
  * GET /users/:email/role
  * Get user role by email
  */
-router.get("/:email/role", getUserRole);
+router.get("/:email/role", verifyToken, getUserRole);
 
 /**
  * GET /users/profile/:email
@@ -43,7 +44,7 @@ router.get("/profile/:email", getUserProfile);
  * PATCH /users/:id/role
  * Update user role
  */
-router.patch("/:id/role", updateUserRole);
+router.patch("/:id/role", verifyToken, verifyAdmin, updateUserRole);
 
 /**
  * PATCH /users/:email/subscription
@@ -55,7 +56,7 @@ router.patch("/:email/subscription", updateUserSubscription);
  * DELETE /users/:id
  * Delete a user
  */
-router.delete("/:id", deleteUser);
+router.delete("/:id", verifyToken, verifyAdmin, deleteUser);
 
 // Export the router
 module.exports = router;
