@@ -20,7 +20,6 @@ const verifyToken = async (req, res, next) => {
     }
 
     const tokenString = authHeader.split(" ")[1]; // "Bearer <token>"
-    console.log("Token string:", tokenString);
 
     if (!tokenString) {
       return res.status(401).json({ message: "Unauthorized - Token missing" });

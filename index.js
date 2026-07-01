@@ -116,11 +116,9 @@ async function run() {
   try {
     // Connect to MongoDB
     await client.connect();
-    console.log("Connected to MongoDB successfully");
 
     // Start the Express server
     app.listen(port, () => {
-      console.log(`Prompt Bazaar server is running on port: ${port}`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);
@@ -133,19 +131,14 @@ async function run() {
  * Handle server shutdown events (Ctrl+C, etc.)
  */
 process.on("SIGINT", async () => {
-  console.log("\nShutting down server...");
-
   try {
     // Close the MongoDB connection
     await client.close();
 
-    console.log("MongoDB connection closed");
-    console.log("Server shut down gracefully");
 
     // Exit the process
     process.exit(0);
   } catch (error) {
-    console.error("Error during shutdown:", error);
     process.exit(1);
   }
 });

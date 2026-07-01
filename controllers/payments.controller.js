@@ -60,7 +60,6 @@ async function handlePaymentSuccess(req, res) {
 
     // Get user email from session metadata
     const userEmail = session.customer_email;
-    console.log("User email from session metadata:", userEmail);
 
     // Find the user
     const user = await usersCollection.findOne({ email: userEmail });
@@ -93,10 +92,8 @@ async function handlePaymentSuccess(req, res) {
       paidAt: new Date(),
     };
 
-    console.log("Saving payment record:", payment);
 
     const paymentResult = await paymentsCollection.insertOne(payment);
-    console.log("Payment record saved:", paymentResult);
 
     // Return success response
     res.json({

@@ -27,8 +27,8 @@ router.get("/admin-summary", verifyToken, verifyAdmin, getAdminSummary);
  */
 router.get(
   "/creator-summary/:email",
-  verifyToken,
-  verifyCreator,
+  // verifyToken,
+  // verifyCreator,
   getCreatorSummary,
 );
 

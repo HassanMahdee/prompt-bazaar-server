@@ -314,7 +314,6 @@ async function createPrompt(req, res) {
 
     // Insert the new prompt into the collection
     const result = await collection.insertOne(promptData);
-    console.log("Prompt created with ID:", result.insertedId);
 
     // Return the created prompt with 201 status
     res.status(201).json({
@@ -622,14 +621,12 @@ async function addReview(req, res) {
 
     // Get the prompt ID from the route parameter
     const { id } = req.params;
-    console.log("id", id);
     // Get the review data from the request body
     const reviewData = req.body;
 
     // Convert the string ID to MongoDB ObjectId
     const { ObjectId } = require("mongodb");
     const objectId = new ObjectId(id);
-    console.log("objectId", objectId);
 
     // Check if prompt exists
     const existingPrompt = await collection.findOne({ _id: objectId });

@@ -6,6 +6,7 @@
  * - User summary statistics
  * - Prompt growth data for charts
  */
+const { ObjectId } = require("mongodb");
 
 /**
  * Get admin summary statistics
@@ -129,19 +130,19 @@ async function getCreatorSummary(req, res) {
 
     // Count approved prompts by creator
     const approvedPrompts = await promptsCollection.countDocuments({
-      creatorId: email,
+      userEmail: email,
       status: "approved",
     });
 
     // Count pending prompts by creator
     const pendingPrompts = await promptsCollection.countDocuments({
-      creatorId: email,
+      userEmail: email,
       status: "pending",
     });
 
     // Get all prompts by creator to calculate totals
     const prompts = await promptsCollection
-      .find({ creatorId: email })
+      .find({ userEmail: email })
       .toArray();
 
     // Calculate total copies
@@ -202,7 +203,6 @@ async function getUserSummary(req, res) {
 
     // Get user email from route parameters
     const { email } = req.params;
-    console.log("email", email);
 
     // Count total bookmarks by user
     const totalBookmarks = await bookmarksCollection.countDocuments({
